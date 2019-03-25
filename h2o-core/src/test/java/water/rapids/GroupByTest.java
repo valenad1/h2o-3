@@ -4,18 +4,16 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import water.DKV;
-import water.Key;
-import water.Keyed;
-import water.TestUtil;
+import water.*;
 import water.fvec.Frame;
 import water.rapids.vals.ValFrame;
-import water.Scope;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertTrue;
 
 public class GroupByTest extends TestUtil {
-  @BeforeClass public static void setup() { stall_till_cloudsize(5); }
+  @BeforeClass public static void setup() { stall_till_cloudsize(1); }
 
   @Test public void testBasic() {
     Frame fr = null;
@@ -265,7 +263,7 @@ public class GroupByTest extends TestUtil {
   public void groupThenAggregateForNumeratorAndDenominatorTest() {
 
     Frame etalon = null;
-    for (int attempt = 0; attempt < 300; attempt++) {
+    for (int attempt = 0; attempt < 3000; attempt++) {
       Scope.enter();
       try {
         Frame fr = parse_test_file("./smalldata/gbm_test/titanic.csv");
@@ -291,8 +289,16 @@ public class GroupByTest extends TestUtil {
         } else {
           Scope.track(groupedFrame);
           try {
+
             assertTrue("Failed attempt number " + attempt, isBitIdentical(etalon, groupedFrame));
           } catch (AssertionError ex) {
+            try {
+              writeFrameToCSV("/Users/wendycwong/temp/etalon.csv", etalon, true, false);
+              writeFrameToCSV("/Users/wendycwong/temp/groupedFrame.csv", groupedFrame, true, false);
+
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
             Frame.export(groupedFrame, "encoding_map_badboy" + attempt + ".csv", groupedFrame._key.toString(),
                     true, 1).get();
             throw ex;

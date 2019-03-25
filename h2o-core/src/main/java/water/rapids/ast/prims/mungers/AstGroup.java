@@ -561,8 +561,21 @@ public class AstGroup extends AstPrimitive {
       for (G rg : r.keySet())
         if (_gss.putIfAbsent(rg, "") != null) {
           G lg = _gss.getk(rg);
-          for (int i = 0; i < _aggs.length; i++)
+          String groupbyClass;
+          if (Double.isNaN(lg._gs[0]))
+            groupbyClass = "NaN";
+          else
+            groupbyClass = _fr.vec(13).domain()[(int)lg._gs[0]];
+          // print info before atomic-op
+          Log.info("*******before atomic_op for class "+groupbyClass+": global nrow: " + lg._dss[1][0]);
+          Log.info("*******before atomic_op for class "+groupbyClass+": local nrow: " + rg._dss[1][0]);
+          
+          for (int i = 0; i < _aggs.length; i++) {  // go through each groupby function
             _aggs[i].atomic_op(lg._dss, lg._ns, i, rg._dss[i], rg._ns[i]); // Need to atomically merge groups here
+          }
+          Log.info("#######after atomic_op for class "+groupbyClass+": global nrow: " + lg._dss[1][0]);
+          Log.info("#######after atomic_op for class "+groupbyClass+": local nrow: " + rg._dss[1][0]);
+
         }
     }
   }
