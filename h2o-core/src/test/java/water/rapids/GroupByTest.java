@@ -263,7 +263,7 @@ public class GroupByTest extends TestUtil {
   public void groupThenAggregateForNumeratorAndDenominatorTest() {
 
     Frame etalon = null;
-    for (int attempt = 0; attempt < 3000; attempt++) {
+    for (int attempt = 0; attempt < 300; attempt++) {
       Scope.enter();
       try {
         Frame fr = parse_test_file("./smalldata/gbm_test/titanic.csv");
