@@ -554,23 +554,23 @@ public class AstGroup extends AstPrimitive {
           groupbyClass = _fr.vec(13).domain()[(int)rg._gs[0]];
         Log.info("@@@@@@ Before reduce chk idx: "+cs[0].cidx()+" class: "+groupbyClass+" local nrow: "+rg._dss[1][0]);
       }
-      for (G rg:_gss.keySet()) {
+/*      for (G rg:_gss.keySet()) {
         String groupbyClass;
         if (Double.isNaN(rg._gs[0]))
           groupbyClass = "NaN";
         else
           groupbyClass = _fr.vec(13).domain()[(int)rg._gs[0]];
         Log.info("@@@@@@ Before reduce chk idx: "+cs[0].cidx()+" class: "+groupbyClass+" global nrow: "+rg._dss[1][0]);
-      }
+      }*/
       reduce(gs);               // Atomically merge Group stats
-      for (G rg:gs.keySet()) {
+/*      for (G rg:gs.keySet()) {
         String groupbyClass;
         if (Double.isNaN(rg._gs[0]))
           groupbyClass = "NaN";
         else
           groupbyClass = _fr.vec(13).domain()[(int)rg._gs[0]];
         Log.info("++++++ after reduce chk idx: "+cs[0].cidx()+" class: "+groupbyClass+" local nrow: "+rg._dss[1][0]);
-      }
+      }*/
       for (G rg:_gss.keySet()) {
         String groupbyClass;
         if (Double.isNaN(rg._gs[0]))
