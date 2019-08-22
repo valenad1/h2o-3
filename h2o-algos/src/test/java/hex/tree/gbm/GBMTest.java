@@ -3371,10 +3371,10 @@ public class GBMTest extends TestUtil {
   @Test public void testQuasibinomial(){
     Scope.enter();
     // test it behaves like binomial on binary data
-    GBMModel model=null, model2=null, model3=null;
+    GBMModel model=null, model2=null, model3=null, model4=null;
     Frame fr = parse_test_file("smalldata/glm_test/prostate_cat_replaced.csv");
     // turn numeric response 0/1 into a categorical factor
-    Frame preds=null, preds2=null, preds3=null;
+    Frame preds=null, preds2=null, preds3=null, preds4=null;
     Vec r = fr.vec("CAPSULE").toCategoricalVec();
     fr.remove("CAPSULE").remove();
     fr.add("CAPSULE", r);
@@ -3394,12 +3394,22 @@ public class GBMTest extends TestUtil {
       }
     }.doAll(fr3);
 
+    Frame fr4 = parse_test_file("smalldata/glm_test/prostate_cat_replaced.csv");
+    new MRTask() {
+      @Override
+      public void map(Chunk[] cs) {
+        for (int i=0;i<cs[0]._len;++i) {
+          cs[1].set(i, cs[1].at8(i) == 1 ? 2 : -1);
+        }
+      }
+    }.doAll(fr4);
+
     try {
       GBMModel.GBMParameters params = new GBMModel.GBMParameters();
       params._response_column = "CAPSULE";
       params._ignored_columns = new String[]{"ID"};
       params._seed = 5;
-      params._ntrees = 500;
+      params._ntrees = 100;
       params._nfolds = 3;
       params._learn_rate = 0.01;
       params._min_rows = 1;
@@ -3422,12 +3432,19 @@ public class GBMTest extends TestUtil {
       model2 = gbm2.trainModel().get();
       preds2 = model2.score(fr2);
 
-      // quasibinomial - numeric response 0/20, minimize deviance (negative log-likelihood)
+      // quasibinomial - numeric response 0/2, minimize deviance (negative log-likelihood)
       params._distribution = DistributionFamily.quasibinomial;
       params._train = fr3._key;
       GBM gbm3 = new GBM(params);
       model3 = gbm3.trainModel().get();
       preds3 = model3.score(fr3);
+
+      // quasibinomial - numeric response -1/1, minimize deviance (negative log-likelihood)
+      params._distribution = DistributionFamily.quasibinomial;
+      params._train = fr4._key;
+      GBM gbm4 = new GBM(params);
+      model4 = gbm4.trainModel().get();
+      preds4 = model4.score(fr4);
 
       // Done building model; produce a score column with predictions
       if (preds!=null)
@@ -3452,10 +3469,14 @@ public class GBMTest extends TestUtil {
       // Build a POJO/MOJO, validate same results
       if (model2!=null)
         System.out.println("Build a POJO/MOJO, validate same results - model2");
-        Assert.assertTrue(model2.testJavaScoring(fr2,preds2,1e-15));
+        
       if (model3!=null)
         System.out.println("Build a POJO/MOJO, validate same results - model3");
         Assert.assertTrue(model3.testJavaScoring(fr3,preds3,1e-15));
+
+      if (model4!=null)
+        System.out.println("Build a POJO/MOJO, validate same results - model4");
+        Assert.assertTrue(model4.testJavaScoring(fr4,preds4,1e-15));
 
       // compare training predictions of both models (just compare probs)
       if (preds!=null && preds2!=null) {
@@ -3467,9 +3488,11 @@ public class GBMTest extends TestUtil {
       if (preds!=null) preds.delete();
       if (preds2!=null) preds2.delete();
       if (preds3!=null) preds3.delete();
+      if (preds4!=null) preds4.delete();
       if (fr!=null) fr.delete();
       if (fr2!=null) fr2.delete();
       if (fr3!=null) fr3.delete();
+      if (fr4!=null) fr4.delete();
       if(model != null){
         model.deleteCrossValidationModels();
         model.delete();
@@ -3481,6 +3504,10 @@ public class GBMTest extends TestUtil {
       if(model3 != null){
         model3.deleteCrossValidationModels();
         model3.delete();
+      }
+      if(model4 != null){
+        model4.deleteCrossValidationModels();
+        model4.delete();
       }
       Scope.exit();
     }
