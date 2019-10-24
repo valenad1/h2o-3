@@ -52,6 +52,13 @@ public class Merge {
   public static Frame merge(final Frame leftFrame, final Frame riteFrame, final int leftCols[], final int riteCols[],
                             boolean allLeft, int[][] id_maps) {
     int[] ascendingL, ascendingR;
+    
+    if (leftFrame.numRows()==0 && riteFrame.numRows() > 0) { // if one frame contains zero rows, returns the other frame which may contain zero rows
+      return riteFrame;
+    }
+    if (riteFrame.numRows()==0 && leftFrame.numRows() > 0) {
+      return leftFrame;
+    }
 
     if (leftCols != null && leftCols.length>0) {
       ascendingL = new int[leftCols.length];
