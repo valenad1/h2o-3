@@ -3,8 +3,7 @@ package hex.genmodel.algos.tree;
 import hex.genmodel.tools.PrintMojo;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Graph for representing a GBM or DRF forest.
@@ -77,6 +76,16 @@ public class SharedTreeGraph {
     os.println("");
     os.println("}");
     os.println("");
+  }
+  
+  public Map<String, Object> toJson() {
+    Map<String, Object> json = new HashMap<>();
+    List<Map<String, Object>> trees = new ArrayList<>();
+    for (SharedTreeSubgraph sg : subgraphArray) {
+      trees.add(sg.toJson());
+    }
+    json.put("trees", trees);
+    return json;
   }
 
   @Override

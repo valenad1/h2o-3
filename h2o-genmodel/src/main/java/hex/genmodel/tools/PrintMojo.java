@@ -1,5 +1,7 @@
 package hex.genmodel.tools;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import hex.genmodel.GenModel;
 import hex.genmodel.MojoModel;
 import hex.genmodel.algos.tree.SharedTreeGraph;
@@ -16,8 +18,13 @@ import java.util.Map;
  * Print dot (graphviz) representation of one or more trees in a DRF or GBM model.
  */
 public class PrintMojo {
+  
+  enum Format {
+    dot, json, raw
+  }
+  
   private GenModel genModel;
-  private static boolean printRaw = false;
+  private static Format format = Format.dot;
   private static int treeToPrint = -1;
   private static int maxLevelsToPrintPerEdge = 10;
   private static boolean detail = false;
@@ -52,6 +59,9 @@ public class PrintMojo {
     System.out.println("The currently supported model types are DRF, GBM and XGBoost.");
     System.out.println("");
     System.out.println("Usage:  java [...java args...] hex.genmodel.tools.PrintMojo [--tree n] [--levels n] [--title sss] [-o outputFileName]");
+    System.out.println("");
+    System.out.println("    --format        Output format.");
+    System.out.println("                    dot|json|raw [default dot]");
     System.out.println("");
     System.out.println("    --tree          Tree number to print.");
     System.out.println("                    [default all]");
@@ -92,6 +102,19 @@ public class PrintMojo {
       for (int i = 0; i < args.length; i++) {
         String s = args[i];
         switch (s) {
+          case "--format":
+            i++;
+            if (i >= args.length) usage();
+            s = args[i];
+            try {
+              format = Format.valueOf(s);
+            }
+            catch (Exception e) {
+              System.out.println("ERROR: invalid --format argument (" + s + ")");
+              System.exit(1);
+            }
+            break;
+
           case "--tree":
             i++;
             if (i >= args.length) usage();
@@ -153,9 +176,6 @@ public class PrintMojo {
             nPlaces = Integer.parseInt(s);
             break;
 
-          case "--raw":
-            printRaw = true;
-            break;
           case "--internal":
             internal = true;
             break;
@@ -200,15 +220,31 @@ public class PrintMojo {
     if(genModel instanceof SharedTreeGraphConverter){
       SharedTreeGraphConverter treeBackedModel = (SharedTreeGraphConverter) genModel;
       final SharedTreeGraph g = treeBackedModel.convert(treeToPrint, null);
-      if (printRaw) {
-        g.print();
+      switch (format) {
+        case raw:
+          g.print();
+          break;
+        case dot:
+          g.printDot(os, maxLevelsToPrintPerEdge, detail, optionalTitle, pTreeOptions);
+          break;
+        case json:
+          printJson(g, os);
+          break;
       }
-      g.printDot(os, maxLevelsToPrintPerEdge, detail, optionalTitle, pTreeOptions);
     }
     else {
       System.out.println("ERROR: Unknown MOJO type");
       System.exit(1);
     }
+  }
+  
+  private void printJson(SharedTreeGraph g, PrintStream os) {
+    Map<String, Object> json = g.toJson();
+    if (optionalTitle != null) {
+      json.put("title", optionalTitle);
+    }
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    os.print(gson.toJson(json));
   }
 
   public class PrintTreeOptions {

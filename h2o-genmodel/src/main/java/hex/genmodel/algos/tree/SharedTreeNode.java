@@ -6,10 +6,7 @@ import hex.genmodel.tools.PrintMojo;
 import hex.genmodel.utils.GenmodelBitSet;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Node in a tree.
@@ -443,6 +440,35 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
     }
   }
 
+  public Map<String, Object> toJson() {
+    Map<String, Object> json = new HashMap<>();
+    json.put("nodeNumber", nodeNumber);
+    json.put("weight", weight);
+    json.put("depth", depth);
+    json.put("colId", colId);
+    json.put("colName", colName);
+    json.put("leftward", leftward);
+    json.put("naVsRest", naVsRest);
+    json.put("inclusiveNa", inclusiveNa);
+    json.put("splitValue", splitValue);
+    json.put("isBitset", isBitset());
+    json.put("predValue", predValue);
+    json.put("squaredError", squaredError);
+    if (domainValues != null) {
+      json.put("domainValues", domainValues);
+    }
+    if (bs != null) {
+      throw new UnsupportedOperationException("Categorical-encoded models not supported yet.");
+    }
+    if (leftChild != null) {
+      json.put("leftChild", leftChild.toJson());
+    }
+    if (rightChild != null) {
+      json.put("rightChild", rightChild.toJson());
+    }
+    return json;
+  }
+  
   public SharedTreeNode getParent() {
     return parent;
   }
