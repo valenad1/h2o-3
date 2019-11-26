@@ -34,43 +34,37 @@ public class SharedTreeGraphTest {
         Map json = g.toJson();
 
         Map c1Json = new HashMap();
-        c1Json.put("splitValue", Float.NaN);
-        c1Json.put("squaredError", Float.NaN);
+        c1Json.put("isCategorical", false);
         c1Json.put("colName", "c1");
         c1Json.put("depth", 1);
         c1Json.put("nodeNumber", 1);
         c1Json.put("weight", 0f);
         c1Json.put("inclusiveNa", true);
         c1Json.put("predValue", 123.456f);
-        c1Json.put("isBitset", false);
         c1Json.put("colId", 1);
         c1Json.put("naVsRest", false);
         c1Json.put("leftward", false);
         
         Map c2Json = new HashMap();
-        c2Json.put("splitValue", Float.NaN);
-        c2Json.put("squaredError", Float.NaN);
+        c2Json.put("isCategorical", false);
         c2Json.put("colName", "c2");
         c2Json.put("depth", 1);
         c2Json.put("nodeNumber", 2);
         c2Json.put("weight", 0f);
         c2Json.put("inclusiveNa", true);
         c2Json.put("predValue", .456f);
-        c2Json.put("isBitset", false);
         c2Json.put("colId", 2);
         c2Json.put("naVsRest", false);
         c2Json.put("leftward", false);
 
         Map root1Json = new HashMap();
+        root1Json.put("isCategorical", false);
         root1Json.put("splitValue", 1f);
-        root1Json.put("squaredError", Float.NaN);
         root1Json.put("colName", "c3");
         root1Json.put("nodeNumber", 0);
         root1Json.put("weight", 0f);
-        root1Json.put("predValue", Float.NaN);
         root1Json.put("depth", 0);
         root1Json.put("inclusiveNa", false);
-        root1Json.put("isBitset", false);
         root1Json.put("colId", 3);
         root1Json.put("naVsRest", false);
         root1Json.put("leftward", false);

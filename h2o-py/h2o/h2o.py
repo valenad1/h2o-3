@@ -1662,6 +1662,11 @@ def upload_mojo(mojo_path):
     print(mojo_estimator)
     return mojo_estimator
 
+def print_mojo(mojo_path, format="json", tree=None):
+    ls = H2OLocalServer()
+    jar = ls._find_jar()
+    java = ls._find_java()
+    cmd = [java, "-jar", jar, "hex.genmodel.tools.PrintMojo -i XGBoost_model_python*.zip -f 20 -d 3 --tree 10"]
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Private

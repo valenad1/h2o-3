@@ -1,0 +1,146 @@
+{
+  "trees": [
+    {
+      "root": {
+        "isCategorical": true,
+        "splitValue": 1.5,
+        "squaredError": 11.1307125,
+        "colName": "C5",
+        "nodeNumber": 0,
+        "weight": 150.0,
+        "predValue": 0.3649551,
+        "leftChild": {
+          "isCategorical": true,
+          "squaredError": 6.983648,
+          "colName": "C5",
+          "nodeNumber": 1,
+          "weight": 100.0,
+          "predValue": 0.54743266,
+          "leftChild": {
+            "isCategorical": false,
+            "squaredError": 3.2347205,
+            "depth": 2,
+            "nodeNumber": 5,
+            "weight": 50.0,
+            "inclusiveNa": false,
+            "predValue": 1.0,
+            "colId": 0,
+            "naVsRest": false,
+            "leftward": false
+          },
+          "depth": 1,
+          "inclusiveNa": true,
+          "matchValues": [
+            "Iris-setosa",
+            "Iris-versicolor"
+          ],
+          "rightChild": {
+            "isCategorical": false,
+            "squaredError": 3.7480965,
+            "depth": 2,
+            "nodeNumber": 6,
+            "weight": 50.0,
+            "inclusiveNa": true,
+            "predValue": 1.0,
+            "colId": 0,
+            "naVsRest": false,
+            "leftward": false
+          },
+          "colId": 0,
+          "naVsRest": false,
+          "leftward": false
+        },
+        "depth": 0,
+        "inclusiveNa": true,
+        "rightChild": {
+          "isCategorical": false,
+          "squaredError": 4.1470647,
+          "depth": 1,
+          "nodeNumber": 4,
+          "weight": 50.0,
+          "inclusiveNa": false,
+          "predValue": 0.0,
+          "colId": 0,
+          "naVsRest": false,
+          "leftward": false
+        },
+        "colId": 0,
+        "naVsRest": false,
+        "leftward": true
+      },
+      "name": "Tree 0",
+      "index": 0
+    },
+    {
+      "root": {
+        "isCategorical": true,
+        "splitValue": 1.5,
+        "squaredError": 11.1307125,
+        "colName": "C5",
+        "nodeNumber": 0,
+        "weight": 150.0,
+        "predValue": 0.3649551,
+        "leftChild": {
+          "isCategorical": true,
+          "squaredError": 6.983648,
+          "colName": "C5",
+          "nodeNumber": 1,
+          "weight": 100.0,
+          "predValue": 0.54743266,
+          "leftChild": {
+            "isCategorical": false,
+            "squaredError": 3.2347205,
+            "depth": 2,
+            "nodeNumber": 5,
+            "weight": 50.0,
+            "inclusiveNa": false,
+            "predValue": 1.0,
+            "colId": 0,
+            "naVsRest": false,
+            "leftward": false
+          },
+          "depth": 1,
+          "inclusiveNa": true,
+          "matchValues": [
+            "Iris-setosa",
+            "Iris-versicolor"
+          ],
+          "rightChild": {
+            "isCategorical": false,
+            "squaredError": 3.7480965,
+            "depth": 2,
+            "nodeNumber": 6,
+            "weight": 50.0,
+            "inclusiveNa": true,
+            "predValue": 1.0,
+            "colId": 0,
+            "naVsRest": false,
+            "leftward": false
+          },
+          "colId": 0,
+          "naVsRest": false,
+          "leftward": false
+        },
+        "depth": 0,
+        "inclusiveNa": true,
+        "rightChild": {
+          "isCategorical": false,
+          "squaredError": 4.1470647,
+          "depth": 1,
+          "nodeNumber": 4,
+          "weight": 50.0,
+          "inclusiveNa": false,
+          "predValue": 0.0,
+          "colId": 0,
+          "naVsRest": false,
+          "leftward": false
+        },
+        "colId": 0,
+        "naVsRest": false,
+        "leftward": true
+      },
+      "name": "Tree 1",
+      "index": 1
+    }
+  ]
+}

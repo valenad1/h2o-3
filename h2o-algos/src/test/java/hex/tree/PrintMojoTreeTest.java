@@ -4,6 +4,7 @@ import hex.genmodel.tools.PrintMojo;
 import hex.tree.isofor.IsolationForest;
 import hex.tree.isofor.IsolationForestModel;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -169,6 +170,41 @@ public class PrintMojoTreeTest {
       Scope.exit();
     }
   }
+
+  @Test
+  public void testMojoCategoricalJson() throws IOException {
+    try {
+      Scope.enter();
+      Frame train = Scope.track(TestUtil.parse_test_file("smalldata/iris/iris.csv"));
+
+      IsolationForestModel.IsolationForestParameters p = new IsolationForestModel.IsolationForestParameters();
+      p._train = train._key;
+      p._ignored_columns = new String[]{"C1", "C2", "C3", "C4"};
+      p._seed = 0xFEED;
+      p._ntrees = 2;
+
+      IsolationForestModel model = new IsolationForest(p).trainModel().get();
+      final File modelFile = folder.newFile();
+      model.exportMojo(modelFile.getAbsolutePath(), true);
+
+      final File treeOutput = folder.newFile();
+      try {
+        PrintMojo.main(new String[]{"--input", modelFile.getAbsolutePath(), "--output", treeOutput.getAbsolutePath(), "--format", "json"});
+        fail("Expected PrintMojo to call System.exit()");
+      } catch (PreventedExitException e) {
+      }
+
+      final String treeJson = FileUtils.readFileToString(treeOutput);
+      assertFalse(treeJson.isEmpty());
+
+      final String expectedTreeJson = IOUtils.toString(getClass().getResourceAsStream("categoricalTree.json"));
+      assertEquals(expectedTreeJson, treeJson);
+
+    } finally {
+      Scope.exit();
+    }
+  }
+
 
   protected static class PreventedExitException extends SecurityException {
     public final int status;

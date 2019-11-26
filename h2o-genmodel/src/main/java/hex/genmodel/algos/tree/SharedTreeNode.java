@@ -443,22 +443,24 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
   public Map<String, Object> toJson() {
     Map<String, Object> json = new HashMap<>();
     json.put("nodeNumber", nodeNumber);
-    json.put("weight", weight);
+    if (!Float.isNaN(weight)) json.put("weight", weight);
     json.put("depth", depth);
     json.put("colId", colId);
     json.put("colName", colName);
     json.put("leftward", leftward);
     json.put("naVsRest", naVsRest);
     json.put("inclusiveNa", inclusiveNa);
-    json.put("splitValue", splitValue);
-    json.put("isBitset", isBitset());
-    json.put("predValue", predValue);
-    json.put("squaredError", squaredError);
-    if (domainValues != null) {
-      json.put("domainValues", domainValues);
-    }
-    if (bs != null) {
-      throw new UnsupportedOperationException("Categorical-encoded models not supported yet.");
+    json.put("isCategorical", isBitset());
+    if (!Float.isNaN(predValue)) json.put("predValue", predValue);
+    if (!Float.isNaN(squaredError)) json.put("squaredError", squaredError);
+    if (domainValues != null && bs != null) {
+      List<String> matchedDomainValues = new ArrayList<>();
+      for (int i = inclusiveLevels.nextSetBit(0); i >= 0; i = inclusiveLevels.nextSetBit(i+1)) {
+        matchedDomainValues.add(domainValues[i]);
+      }
+      json.put("matchValues", matchedDomainValues);
+    } else if (!Float.isNaN(splitValue)) {
+      json.put("splitValue", splitValue);
     }
     if (leftChild != null) {
       json.put("leftChild", leftChild.toJson());
@@ -575,6 +577,19 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
   public final int next(double[] value) {
     final double d = value[colId];
 
+    if (
+            Double.isNaN(d) || 
+            (bs != null && !bs.isInRange((int)d)) || 
+            (domainValues != null && domainValues.length <= (int) d)
+        ? 
+            !leftward 
+        : 
+            !naVsRest && (bs == null ? d >= splitValue : bs.contains((int)d))
+    ) {
+      // go RIGHT
+      return getRightChildIndex();
+    }
+    
     if (Double.isNaN(d) || 
             (bs != null && !bs.isInRange((int)d)) || (domainValues != null && domainValues.length <= (int)d)
             ? !leftward : !naVsRest && (bs == null ? d >= splitValue : bs.contains((int)d))) {
