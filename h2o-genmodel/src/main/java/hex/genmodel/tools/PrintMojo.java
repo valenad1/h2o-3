@@ -5,12 +5,13 @@ import com.google.gson.GsonBuilder;
 import hex.genmodel.GenModel;
 import hex.genmodel.MojoModel;
 import hex.genmodel.algos.tree.SharedTreeGraph;
-import hex.genmodel.algos.tree.SharedTreeGraphConverter;
+import hex.genmodel.algos.tree.TreeBackedMojoModel;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -220,8 +221,8 @@ public class PrintMojo {
       os = System.out;
     }
 
-    if(genModel instanceof SharedTreeGraphConverter){
-      SharedTreeGraphConverter treeBackedModel = (SharedTreeGraphConverter) genModel;
+    if (genModel instanceof TreeBackedMojoModel){
+      TreeBackedMojoModel treeBackedModel = (TreeBackedMojoModel) genModel;
       final SharedTreeGraph g = treeBackedModel.convert(treeToPrint, null);
       switch (format) {
         case raw:
@@ -231,7 +232,7 @@ public class PrintMojo {
           g.printDot(os, maxLevelsToPrintPerEdge, detail, optionalTitle, pTreeOptions);
           break;
         case json:
-          printJson(g, os);
+          printJson(treeBackedModel, g, os);
           break;
       }
     }
@@ -241,11 +242,15 @@ public class PrintMojo {
     }
   }
   
-  private void printJson(SharedTreeGraph g, PrintStream os) {
+  private void printJson(TreeBackedMojoModel mojo, SharedTreeGraph g, PrintStream os) {
     Map<String, Object> json = g.toJson();
     if (optionalTitle != null) {
       json.put("title", optionalTitle);
     }
+    Map<String, Object> params = new HashMap<>();
+    params.put("n_tree_groups", mojo.getNTreeGroups());
+    params.put("n_trees_in_group", mojo.getNTreesPerGroup());
+    json.put("params", params);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     os.print(gson.toJson(json));
   }
