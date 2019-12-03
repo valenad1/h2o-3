@@ -4,6 +4,7 @@ import hex.Model;
 import hex.genmodel.utils.DistributionFamily;
 import hex.tree.gbm.GBMModel;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -282,10 +283,7 @@ public class GridTest extends TestUtil {
       params._train = trainingFrame._key;
       params._response_column = "species";
 
-      GridSearch.SimpleParametersBuilderFactory simpleParametersBuilderFactory = new GridSearch.SimpleParametersBuilderFactory();
-      HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria hyperSpaceSearchCriteria = new HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria();
-
-      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 1);
+      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms);
       Scope.track_generic(gs);
       final Grid errGrid = gs.get();
       Scope.track_generic(errGrid);
@@ -469,7 +467,7 @@ public class GridTest extends TestUtil {
         put("_distribution", new DistributionFamily[]{DistributionFamily.multinomial});
         put("_ntrees", new Integer[]{5});
         put("_max_depth", new Integer[]{2});
-        put("_min_rows", new Integer[]{10}); // Invalid hyperparameter, causes model training to fail
+        put("_min_rows", new Integer[]{10});
         put("_learn_rate", new Double[]{.7});
       }};
 
@@ -477,10 +475,7 @@ public class GridTest extends TestUtil {
       params._train = trainingFrame._key;
       params._response_column = "species";
 
-      GridSearch.SimpleParametersBuilderFactory simpleParametersBuilderFactory = new GridSearch.SimpleParametersBuilderFactory();
-      HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria hyperSpaceSearchCriteria = new HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria();
-
-      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 1);
+      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms);
       Scope.track_generic(gs);
       final Grid errGrid = gs.get();
       Scope.track_generic(errGrid);
@@ -497,7 +492,7 @@ public class GridTest extends TestUtil {
 
       // Train a second model with modified parameters to forcefully produce a new model
       hyperParms.put("_learn_rate", new Double[]{0.5});
-      gs = GridSearch.startGridSearch(errGrid._key, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 1);
+      gs = GridSearch.startGridSearch(errGrid._key, params, hyperParms);
       Scope.track_generic(gs);
       final Grid grid = gs.get();
       Scope.track_generic(grid);
@@ -512,6 +507,144 @@ public class GridTest extends TestUtil {
 
       final String expectedErr = "Test exception";
       assertTrue(failures.getFailureStackTraces()[0].contains(expectedErr));
+
+    } finally {
+      Scope.exit();
+    }
+  }
+
+
+  @Test
+  public void testParallelCartesianSearch_MultiRun() {
+    try {
+      Scope.enter();
+      final Frame trainingFrame = parse_test_file("smalldata/iris/iris_train.csv");
+      Scope.track(trainingFrame);
+
+      // Setup random hyperparameter search space
+      HashMap<String, Object[]> hyperParms = new HashMap<String, Object[]>() {{
+        put("_distribution", new DistributionFamily[]{DistributionFamily.multinomial});
+        put("_ntrees", new Integer[]{5});
+        put("_max_depth", new Integer[]{2});
+        put("_min_rows", new Integer[]{10,11,12,13,14});
+        put("_learn_rate", new Double[]{.7});
+      }};
+
+      GBMModel.GBMParameters params = new GBMModel.GBMParameters();
+      params._train = trainingFrame._key;
+      params._response_column = "species";
+
+      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms, 6);
+      Scope.track_generic(gs);
+      final Grid grid1 = gs.get();
+      Scope.track_generic(grid1);
+
+      assertEquals(5, grid1.getModelCount());
+
+      // Train a grid with new hyper parameters
+      hyperParms.put("_learn_rate", new Double[]{0.5});
+      gs = GridSearch.startGridSearch(grid1._key, params, hyperParms,6);
+      Scope.track_generic(gs);
+      final Grid grid = gs.get();
+      Scope.track_generic(grid);
+
+
+      int expectedNumberOfModelsFromTwoGrids = 10;
+      assertEquals(expectedNumberOfModelsFromTwoGrids, grid.getModelCount());
+
+    } finally {
+      Scope.exit();
+    }
+  }
+
+  @Test
+  public void testParallelRandomSearchWithDefaultMaxModels_MultiRun() {
+    try {
+      Scope.enter();
+      final Frame trainingFrame = parse_test_file("smalldata/iris/iris_train.csv");
+      Scope.track(trainingFrame);
+
+      // Setup random hyperparameter search space
+      HashMap<String, Object[]> hyperParms = new HashMap<String, Object[]>() {{
+        put("_distribution", new DistributionFamily[]{DistributionFamily.multinomial});
+        put("_ntrees", new Integer[]{5});
+        put("_max_depth", new Integer[]{2});
+        put("_min_rows", new Integer[]{10,11,12,13,14});
+        put("_learn_rate", new Double[]{.7});
+      }};
+
+      GBMModel.GBMParameters params = new GBMModel.GBMParameters();
+      params._train = trainingFrame._key;
+      params._response_column = "species";
+
+      GridSearch.SimpleParametersBuilderFactory simpleParametersBuilderFactory = new GridSearch.SimpleParametersBuilderFactory();
+      HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria hyperSpaceSearchCriteria = new HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria();
+
+      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 6);
+      Scope.track_generic(gs);
+      final Grid grid1 = gs.get();
+      Scope.track_generic(grid1);
+
+      assertEquals(5, grid1.getModelCount());
+
+      // Train a grid with new hyper parameters
+      hyperParms.put("_learn_rate", new Double[]{0.5});
+      gs = GridSearch.startGridSearch(grid1._key, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 6);
+      Scope.track_generic(gs);
+      final Grid grid = gs.get();
+      Scope.track_generic(grid);
+
+
+      int expectedNumberOfModelsFromTwoGrids = 10;
+      assertEquals(expectedNumberOfModelsFromTwoGrids, grid.getModelCount());
+
+    } finally {
+      Scope.exit();
+    }
+  }
+
+
+  @Ignore // should be resolved here https://github.com/h2oai/h2o-3/pull/4119
+  public void testParallelRandomSearchWithCustomMaxModels() {
+    try {
+      Scope.enter();
+      final Frame trainingFrame = parse_test_file("smalldata/iris/iris_train.csv");
+      Scope.track(trainingFrame);
+
+      // Setup random hyperparameter search space
+      HashMap<String, Object[]> hyperParms = new HashMap<String, Object[]>() {{
+        put("_distribution", new DistributionFamily[]{DistributionFamily.multinomial});
+        put("_ntrees", new Integer[]{5});
+        put("_max_depth", new Integer[]{2});
+        put("_min_rows", new Integer[]{10,11,12,13,14});
+        put("_learn_rate", new Double[]{.7});
+      }};
+
+      GBMModel.GBMParameters params = new GBMModel.GBMParameters();
+      params._train = trainingFrame._key;
+      params._response_column = "species";
+
+      GridSearch.SimpleParametersBuilderFactory simpleParametersBuilderFactory = new GridSearch.SimpleParametersBuilderFactory();
+      HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria hyperSpaceSearchCriteria = new HyperSpaceSearchCriteria.RandomDiscreteValueSearchCriteria();
+      int custom_max_model = 3;
+      hyperSpaceSearchCriteria.set_max_models(custom_max_model);
+
+      Job<Grid> gs = GridSearch.startGridSearch(null, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 2);
+      Scope.track_generic(gs);
+      final Grid grid1 = gs.get();
+      Scope.track_generic(grid1);
+
+      assertEquals(custom_max_model, grid1.getModelCount());
+
+      // Train a grid with new hyper parameters
+      hyperParms.put("_learn_rate", new Double[]{0.5});
+      gs = GridSearch.startGridSearch(grid1._key, params, hyperParms, simpleParametersBuilderFactory, hyperSpaceSearchCriteria, 2);
+      Scope.track_generic(gs);
+      final Grid grid = gs.get();
+      Scope.track_generic(grid);
+
+      int expectedNumberOfModelsFromTwoGrids = 2*custom_max_model;
+      assertEquals(expectedNumberOfModelsFromTwoGrids, grid.getModelCount());
 
     } finally {
       Scope.exit();
