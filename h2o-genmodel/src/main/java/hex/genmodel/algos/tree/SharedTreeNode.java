@@ -290,8 +290,8 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
     return s.replace("\"", "\\\"");
   }
 
-  private void printDotNode(PrintStream os, boolean detail, PrintMojo.PrintTreeOptions treeOptions) {
-    os.print("\"" + getDotName() + "\"");
+  private void printDotNode(PrintStream os, boolean detail, PrintMojo.PrintTreeOptions treeOptions, boolean graphstreamCustom) {
+    os.print(graphstreamCustom ? getDotName() : "\"" + getDotName() + "\"");
     os.print(" [");
 
     if (leftChild==null && rightChild==null) {
@@ -332,7 +332,7 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
       }
     }
 
-    os.print("\"]");
+    os.print(graphstreamCustom ? "\"];" : "\"]");
     os.println("");
   }
 
@@ -341,26 +341,27 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
    * @param os output stream
    * @param levelToPrint level number
    * @param detail include additional node detail information
+   * @param graphstreamCustom prints "custom dot format" readable by graphstream when true.
    */
-  void printDotNodesAtLevel(PrintStream os, int levelToPrint, boolean detail, PrintMojo.PrintTreeOptions treeOptions) {
+  void printDotNodesAtLevel(PrintStream os, int levelToPrint, boolean detail, PrintMojo.PrintTreeOptions treeOptions, boolean graphstreamCustom) {
     if (getDepth() == levelToPrint) {
-      printDotNode(os, detail, treeOptions);
+      printDotNode(os, detail, treeOptions, graphstreamCustom);
       return;
     }
 
     assert (getDepth() < levelToPrint);
 
     if (leftChild != null) {
-      leftChild.printDotNodesAtLevel(os, levelToPrint, detail, treeOptions);
+      leftChild.printDotNodesAtLevel(os, levelToPrint, detail, treeOptions, graphstreamCustom);
     }
     if (rightChild != null) {
-      rightChild.printDotNodesAtLevel(os, levelToPrint, detail, treeOptions);
+      rightChild.printDotNodesAtLevel(os, levelToPrint, detail, treeOptions, graphstreamCustom);
     }
   }
 
   private void printDotEdgesCommon(PrintStream os, int maxLevelsToPrintPerEdge, ArrayList<String> arr,
                                    SharedTreeNode child, float totalWeight, boolean detail,
-                                   PrintMojo.PrintTreeOptions treeOptions) {
+                                   PrintMojo.PrintTreeOptions treeOptions, boolean graphstreamCustom) {
     if (isBitset() || (!Float.isNaN(splitValue) && treeOptions._internal)) { // Print categorical levels even in case of internal numerical representation
       BitSet childInclusiveLevels = child.getInclusiveLevels();
       int total = childInclusiveLevels.cardinality();
@@ -391,7 +392,7 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
       os.print(escapeQuotes(s) + "\\n");
     }
     os.print("\"");
-    os.println("]");
+    os.println(graphstreamCustom ? "];" : "]");
   }
 
   /**
@@ -400,13 +401,17 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
    * @param maxLevelsToPrintPerEdge Limit the number of individual categorical level names printed per edge
    * @param totalWeight total weight of all observations (used to determine edge thickness)
    * @param detail include additional edge detail information
+   * @param graphstreamCustom prints "custom dot format" readable by graphstream when true.
    */
   void printDotEdges(PrintStream os, int maxLevelsToPrintPerEdge, float totalWeight, boolean detail,
-                     PrintMojo.PrintTreeOptions treeOptions) {
+                     PrintMojo.PrintTreeOptions treeOptions, boolean graphstreamCustom) {
     assert (leftChild == null) == (rightChild == null);
 
     if (leftChild != null) {
-      os.print("\"" + getDotName() + "\"" + " -> " + "\"" + leftChild.getDotName() + "\"" + " [");
+        os.print(graphstreamCustom 
+                ? getDotName()  + " -> " + leftChild.getDotName() +  " [" 
+                : "\"" + getDotName() + "\"" + " -> " + "\"" + leftChild.getDotName() + "\"" + " [" );
+
 
       ArrayList<String> arr = new ArrayList<>();
       if (leftChild.getInclusiveNa()) {
@@ -422,12 +427,14 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
         }
       }
 
-      printDotEdgesCommon(os, maxLevelsToPrintPerEdge, arr, leftChild, totalWeight, detail, treeOptions);
+      printDotEdgesCommon(os, maxLevelsToPrintPerEdge, arr, leftChild, totalWeight, detail, treeOptions, graphstreamCustom);
     }
 
     if (rightChild != null) {
-      os.print("\"" + getDotName() + "\"" + " -> " + "\"" + rightChild.getDotName() + "\"" + " [");
-
+        os.print(graphstreamCustom 
+                ? getDotName() +  " -> " + rightChild.getDotName() +  " [" 
+                : "\"" + getDotName() + "\"" + " -> " + "\"" + rightChild.getDotName() + "\"" + " [");
+        
       ArrayList<String> arr = new ArrayList<>();
       if (rightChild.getInclusiveNa()) {
         arr.add("[NA]");
@@ -439,7 +446,7 @@ public class SharedTreeNode implements INode<double[]>, INodeStat {
         }
       }
 
-      printDotEdgesCommon(os, maxLevelsToPrintPerEdge, arr, rightChild, totalWeight, detail, treeOptions);
+      printDotEdgesCommon(os, maxLevelsToPrintPerEdge, arr, rightChild, totalWeight, detail, treeOptions, graphstreamCustom);
     }
   }
 

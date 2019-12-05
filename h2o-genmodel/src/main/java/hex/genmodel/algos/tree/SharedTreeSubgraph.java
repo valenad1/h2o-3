@@ -129,7 +129,7 @@ public class SharedTreeSubgraph {
     rootNode.printEdges();
   }
 
-  void printDot(PrintStream os, int maxLevelsToPrintPerEdge, boolean detail, String optionalTitle, PrintMojo.PrintTreeOptions treeOptions) {
+  void printDot(PrintStream os, int maxLevelsToPrintPerEdge, boolean detail, String optionalTitle, PrintMojo.PrintTreeOptions treeOptions, boolean graphstreamCustom) {
     os.println("");
     os.println("subgraph " + "cluster_" + subgraphNumber + " {");
     os.println("/* Nodes */");
@@ -144,21 +144,23 @@ public class SharedTreeSubgraph {
     for (int level = 0; level <= maxLevel; level++) {
       os.println("");
       os.println("/* Level " + level + " */");
-      os.println("{");
-      rootNode.printDotNodesAtLevel(os, level, detail, treeOptions);
-      os.println("}");
+      os.println(graphstreamCustom ? "subgraph {" :"{");
+      rootNode.printDotNodesAtLevel(os, level, detail, treeOptions, graphstreamCustom);
+      os.println(graphstreamCustom ? "};" : "}");
     }
 
     os.println("");
     os.println("/* Edges */");
     for (SharedTreeNode n : nodesArray) {
-      n.printDotEdges(os, maxLevelsToPrintPerEdge, rootNode.getWeight(), detail, treeOptions);
+      n.printDotEdges(os, maxLevelsToPrintPerEdge, rootNode.getWeight(), detail, treeOptions, graphstreamCustom);
     }
     os.println("");
-    os.println("fontsize="+40); // fix title label to be 40pts
-    String title = SharedTreeNode.escapeQuotes((optionalTitle != null) ? optionalTitle : name);
-    os.println("label=\"" + title + "\"");
-    os.println("}");
+    if (!graphstreamCustom) {
+      os.println("fontsize=" + 40); // fix title label to be 40pts
+      String title = SharedTreeNode.escapeQuotes((optionalTitle != null) ? optionalTitle : name);
+      os.println("label=\"" + title + "\"");
+    }
+    os.println(graphstreamCustom ? "};" : "}");
   }
 
   @Override

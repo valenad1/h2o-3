@@ -5,12 +5,17 @@ import hex.genmodel.MojoModel;
 import hex.genmodel.algos.tree.SharedTreeGraph;
 import hex.genmodel.algos.tree.SharedTreeGraphConverter;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Map;
+import org.graphstream.graph.ElementNotFoundException;
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.implementations.MultiGraph;
+import org.graphstream.stream.GraphParseException;
+import org.graphstream.stream.file.FileSinkImages;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 
 /**
  * Print dot (graphviz) representation of one or more trees in a DRF or GBM model.
@@ -25,6 +30,18 @@ public class PrintMojo {
   private static String optionalTitle = null;
   private static PrintTreeOptions pTreeOptions;
   private static boolean internal;
+  private String outputPngName = null;
+  private static final String tmpOutputFileName = "tmpOutputFileName.dot";
+  private static final String stylesheet = "" +
+          "node {" +
+          "   text-background-mode: rounded-box;" +
+          "   text-background-color: gray; " +
+          "   text-color: #222;" +
+          "}" +
+          "node.plus {" +
+          "   text-background-color: #F33; " +
+          "   text-color: #DDD;" +
+          "}";
 
   public static void main(String[] args) {
     // Parse command line arguments
@@ -51,7 +68,7 @@ public class PrintMojo {
     System.out.println("Emit a human-consumable graph of a model for use with dot (graphviz).");
     System.out.println("The currently supported model types are DRF, GBM and XGBoost.");
     System.out.println("");
-    System.out.println("Usage:  java [...java args...] hex.genmodel.tools.PrintMojo [--tree n] [--levels n] [--title sss] [-o outputFileName]");
+    System.out.println("Usage:  java [...java args...] hex.genmodel.tools.PrintMojo [--tree n] [--levels n] [--title sss] [-o outputFileName] [--direct imageOutputFileName]");
     System.out.println("");
     System.out.println("    --tree          Tree number to print.");
     System.out.println("                    [default all]");
@@ -72,6 +89,8 @@ public class PrintMojo {
     System.out.println("    --fontsize | -f    Set font sizes of strings.");
     System.out.println("");
     System.out.println("    --internal    Internal H2O representation of the decision tree (splits etc.) is used for generating the GRAPHVIZ format.");
+    System.out.println("");
+    System.out.println("    --direct    Produce directly an image of the Tree instead of the dot-format.");
     System.out.println("");
     System.out.println("");
     System.out.println("Example:");
@@ -98,8 +117,7 @@ public class PrintMojo {
             s = args[i];
             try {
               treeToPrint = Integer.parseInt(s);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
               System.out.println("ERROR: invalid --tree argument (" + s + ")");
               System.exit(1);
             }
@@ -111,8 +129,7 @@ public class PrintMojo {
             s = args[i];
             try {
               maxLevelsToPrintPerEdge = Integer.parseInt(s);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
               System.out.println("ERROR: invalid --levels argument (" + s + ")");
               System.exit(1);
             }
@@ -153,6 +170,12 @@ public class PrintMojo {
             nPlaces = Integer.parseInt(s);
             break;
 
+          case "--direct":
+            i++;
+            if (i >= args.length) usage();
+            outputPngName = args[i];
+            break;
+            
           case "--raw":
             printRaw = true;
             break;
@@ -189,29 +212,62 @@ public class PrintMojo {
 
   private void run() throws Exception {
     validateArgs();
-    PrintStream os;
     if (outputFileName != null) {
-      os = new PrintStream(new FileOutputStream(new File(outputFileName)));
+      handlePrintingToOutputFile();
+    } else if (outputPngName != null) {
+      handlePrintingToTmpFile();
+    } else {
+      handlePrintingToConsole();
     }
-    else {
-      os = System.out;
-    }
-
-    if(genModel instanceof SharedTreeGraphConverter){
-      SharedTreeGraphConverter treeBackedModel = (SharedTreeGraphConverter) genModel;
-      final SharedTreeGraph g = treeBackedModel.convert(treeToPrint, null);
-      if (printRaw) {
-        g.print();
-      }
-      g.printDot(os, maxLevelsToPrintPerEdge, detail, optionalTitle, pTreeOptions);
-    }
-    else {
-      System.out.println("ERROR: Unknown MOJO type");
-      System.exit(1);
+  }
+  
+  private void handlePrintingToOutputFile() throws IOException, GraphParseException, ElementNotFoundException {
+    Path dotSourceFilePath = Paths.get(outputFileName);
+    try (PrintStream os = new PrintStream(new FileOutputStream(dotSourceFilePath.toFile()))) {
+      generateDotFromSource(os, dotSourceFilePath);
     }
   }
 
-  public class PrintTreeOptions {
+  private void handlePrintingToTmpFile() throws IOException, GraphParseException, ElementNotFoundException {
+    Path dotSourceFilePath = Files.createTempFile("", tmpOutputFileName);
+    try (PrintStream os = new PrintStream(new FileOutputStream(dotSourceFilePath.toFile()))) {
+      generateDotFromSource(os, dotSourceFilePath);
+    }
+  }
+
+  private void handlePrintingToConsole() throws IOException, GraphParseException, ElementNotFoundException {
+    generateDotFromSource(System.out, null);
+  }
+
+  private void generateDotFromSource(PrintStream os, Path dotSourceFilePath) throws IOException, GraphParseException, ElementNotFoundException {
+    if (!(genModel instanceof SharedTreeGraphConverter)) {
+      System.out.println("ERROR: Unknown MOJO type");
+      System.exit(1);
+    }
+    SharedTreeGraphConverter treeBackedModel = (SharedTreeGraphConverter) genModel;
+    final SharedTreeGraph g = treeBackedModel.convert(treeToPrint, null);
+    if (printRaw) {
+      g.print();
+    }
+    g.printDot(os, maxLevelsToPrintPerEdge, detail, optionalTitle, pTreeOptions, true);
+    if (outputPngName != null) {
+        Graph graph = new MultiGraph(outputPngName) ;
+        graph.read(dotSourceFilePath.toString());
+        saveGraph(graph);
+    }
+  }
+
+  public void saveGraph(Graph graph) throws IOException {
+    final FileSinkImages fsi = new FileSinkImages();
+    fsi.setLayoutPolicy(FileSinkImages.LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
+    fsi.setQuality(FileSinkImages.Quality.HIGH);
+    fsi.setResolution(FileSinkImages.Resolutions.HD1080);
+    fsi.setRenderer(FileSinkImages.RendererType.SCALA);
+    fsi.setStyleSheet(stylesheet);
+    fsi.writeAll(graph, outputPngName);
+  }
+
+  public static class PrintTreeOptions {
     public boolean _setDecimalPlace = false;
     public int _nPlaces = -1;
     public int _fontSize = 14;  // default
