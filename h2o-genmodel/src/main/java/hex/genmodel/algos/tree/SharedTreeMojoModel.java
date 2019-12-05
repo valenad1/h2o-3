@@ -76,7 +76,6 @@ public abstract class SharedTreeMojoModel extends MojoModel implements TreeBacke
       return _ntrees_per_group;
     }
 
-
     /**
      * @deprecated use {@link #scoreTree0(byte[], double[], boolean)} instead.
      */

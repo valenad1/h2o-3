@@ -2,8 +2,8 @@ package hex.genmodel.tools;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import hex.genmodel.GenModel;
 import hex.genmodel.MojoModel;
+import hex.genmodel.algos.gbm.GbmMojoModel;
 import hex.genmodel.algos.tree.SharedTreeGraph;
 import hex.genmodel.algos.tree.TreeBackedMojoModel;
 
@@ -23,7 +23,7 @@ public class PrintMojo {
     dot, json, raw
   }
   
-  private GenModel genModel;
+  private MojoModel genModel;
   private static Format format = Format.dot;
   private static int treeToPrint = -1;
   private static int maxLevelsToPrintPerEdge = 10;
@@ -51,41 +51,41 @@ public class PrintMojo {
   }
 
   private void loadMojo(String modelName) throws IOException {
-    genModel = MojoModel.load(modelName);
+    genModel = MojoModel.load(modelName, true);
   }
 
   private static void usage() {
     System.out.println("Emit a human-consumable graph of a model for use with dot (graphviz).");
     System.out.println("The currently supported model types are DRF, GBM and XGBoost.");
-    System.out.println("");
+    System.out.println();
     System.out.println("Usage:  java [...java args...] hex.genmodel.tools.PrintMojo [--tree n] [--levels n] [--title sss] [-o outputFileName]");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --format        Output format.");
     System.out.println("                    dot|json|raw [default dot]");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --tree          Tree number to print.");
     System.out.println("                    [default all]");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --levels        Number of levels per edge to print.");
     System.out.println("                    [default " + maxLevelsToPrintPerEdge + "]");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --title         (Optional) Force title of tree graph.");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --detail        Specify to print additional detailed information like node numbers.");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --input | -i    Input mojo file.");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --output | -o   Output dot filename.");
     System.out.println("                    [default stdout]");
     System.out.println("    --decimalplaces | -d    Set decimal places of all numerical values.");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --fontsize | -f    Set font sizes of strings.");
-    System.out.println("");
+    System.out.println();
     System.out.println("    --internal    Internal H2O representation of the decision tree (splits etc.) is used for generating the GRAPHVIZ format.");
-    System.out.println("");
-    System.out.println("");
+    System.out.println();
+    System.out.println();
     System.out.println("Example:");
-    System.out.println("");
+    System.out.println();
     System.out.println("    (brew install graphviz)");
     System.out.println("    java -cp h2o.jar hex.genmodel.tools.PrintMojo --tree 0 -i model_mojo.zip -o model.gv -f 20 -d 3");
     System.out.println("    dot -Tpng model.gv -o model.png");
@@ -242,28 +242,47 @@ public class PrintMojo {
     }
   }
   
+  private Map<String, Object> getParamsAsJson(TreeBackedMojoModel tree) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("algo", genModel._modelDescriptor.algoName());
+    params.put("h2o_version", genModel._h2oVersion);
+    params.put("mojo_version", genModel._mojo_version);
+    params.put("model_category", genModel._category.toString());
+    params.put("classifier", genModel.isClassifier());
+    params.put("supervised", genModel._supervised);
+    params.put("nfeatures", genModel._nfeatures);
+    params.put("nclasses", genModel._nclasses);
+    params.put("balance_classes", genModel._balanceClasses);
+    params.put("n_tree_groups", tree.getNTreeGroups());
+    params.put("n_trees_in_group", tree.getNTreesPerGroup());
+    params.put("base_score", tree.getInitF());
+    if (genModel instanceof GbmMojoModel) {
+      GbmMojoModel m = (GbmMojoModel) genModel;
+      params.put("family", m._family.toString());
+      params.put("link_function", m._link_function.toString());
+    }
+    return params;
+  }
+  
   private void printJson(TreeBackedMojoModel mojo, SharedTreeGraph g, PrintStream os) {
     Map<String, Object> json = g.toJson();
+    json.put("params", getParamsAsJson(mojo));
     if (optionalTitle != null) {
       json.put("title", optionalTitle);
     }
-    Map<String, Object> params = new HashMap<>();
-    params.put("n_tree_groups", mojo.getNTreeGroups());
-    params.put("n_trees_in_group", mojo.getNTreesPerGroup());
-    json.put("params", params);
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     os.print(gson.toJson(json));
   }
 
-  public class PrintTreeOptions {
-    public boolean _setDecimalPlace = false;
-    public int _nPlaces = -1;
-    public int _fontSize = 14;  // default
+  public static class PrintTreeOptions {
+    public boolean _setDecimalPlace;
+    public int _nPlaces;
+    public int _fontSize;
     public boolean _internal;
 
     public PrintTreeOptions(boolean setdecimalplaces, int nplaces, int fontsize, boolean internal) {
       _setDecimalPlace = setdecimalplaces;
-      _nPlaces = _setDecimalPlace?nplaces:_nPlaces;
+      _nPlaces = _setDecimalPlace ? nplaces : _nPlaces;
       _fontSize = fontsize;
       _internal = internal;
     }

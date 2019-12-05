@@ -1,6 +1,8 @@
 package hex.tree;
 
 import hex.genmodel.tools.PrintMojo;
+import hex.tree.gbm.GBM;
+import hex.tree.gbm.GBMModel;
 import hex.tree.isofor.IsolationForest;
 import hex.tree.isofor.IsolationForestModel;
 import org.apache.commons.io.FileUtils;
@@ -205,6 +207,40 @@ public class PrintMojoTreeTest {
     }
   }
 
+  @Test
+  public void testMojoGBMJson() throws IOException {
+    try {
+      Scope.enter();
+      Frame train = Scope.track(TestUtil.parse_test_file("smalldata/extdata/prostate.csv"));
+
+      GBMModel.GBMParameters p = new GBMModel.GBMParameters();
+      p._train = train._key;
+      p._response_column = "CAPSULE";
+      p._ignored_columns = new String[]{"ID"};
+      p._seed = 1;
+      p._ntrees = 2;
+
+      GBMModel model = new GBM(p).trainModel().get();
+      final File modelFile = folder.newFile();
+      model.exportMojo(modelFile.getAbsolutePath(), true);
+
+      final File treeOutput = folder.newFile();
+      try {
+        PrintMojo.main(new String[]{"--input", modelFile.getAbsolutePath(), "--output", treeOutput.getAbsolutePath(), "--format", "json"});
+        fail("Expected PrintMojo to call System.exit()");
+      } catch (PreventedExitException e) {
+      }
+
+      final String treeJson = FileUtils.readFileToString(treeOutput);
+      assertFalse(treeJson.isEmpty());
+
+      final String expectedTreeJson = IOUtils.toString(getClass().getResourceAsStream("gbmTree.json"));
+      assertEquals(expectedTreeJson, treeJson);
+
+    } finally {
+      Scope.exit();
+    }
+  }
 
   protected static class PreventedExitException extends SecurityException {
     public final int status;

@@ -1,4 +1,18 @@
 {
+  "params": {
+    "supervised": false,
+    "base_score": 0.0,
+    "model_category": "AnomalyDetection",
+    "mojo_version": 1.3,
+    "n_tree_groups": 2,
+    "classifier": false,
+    "balance_classes": false,
+    "nclasses": 1,
+    "n_trees_in_group": 1,
+    "algo": "isolationforest",
+    "h2o_version": "3.27.0.99999",
+    "nfeatures": 1
+  },
   "trees": [
     {
       "root": {
