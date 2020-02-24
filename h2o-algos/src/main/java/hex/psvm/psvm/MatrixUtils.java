@@ -1,15 +1,16 @@
 package hex.psvm.psvm;
 
 import water.MRTask;
-import water.fvec.Chunk;
-import water.fvec.Frame;
-import water.fvec.FrameCreator;
-import water.fvec.Vec;
+import water.fvec.*;
 import water.util.ArrayUtils;
 import water.util.FrameUtils;
 
 import java.util.Arrays;
 
+/**
+ * Utils class for matrix operations. See also {code DMatrix.java}
+ * 
+ */
 public class MatrixUtils {
 
   /**
@@ -35,7 +36,7 @@ public class MatrixUtils {
   /**
    * Calculates matrix-vector product M'v
    * @param m Frame representing matrix M (m x n)
-   * @param v Vec representing vector v (n x 1) - TODO avalenta NOT WORKING, dimension must be m x 1
+   * @param v Vec representing vector v (m x 1)
    * @return m-element array representing the result of the product
    */
   public static double[] productMtv(Frame m, Vec v) {
@@ -54,7 +55,7 @@ public class MatrixUtils {
    */
   public static Vec workingProductMtv(Frame m, Vec v) {
     // TODO avalenta better vec creation
-    Vec result = new ProductMtvTask2(v, m.numRows()).doAll(m)._result;
+    Vec result = new ProductMtvTask2(v, m.numRows()).doAll(Vec.T_NUM, m).outputFrame().vecs()[0];
     // System.out.println(Arrays.toString(FrameUtils.asDoubles(result)));
     return result;
   }  
@@ -81,7 +82,7 @@ public class MatrixUtils {
     if (v.length() != m.numCols()) {
       throw new UnsupportedOperationException("Vector elements number must be the same as matrix column number");
     }
-    Frame result = new SubMtvTask(v).doAll(m.deepCopy("newKey"))._fr;
+    Frame result = new SubMtvTask(v).doAll(m.deepCopy("newKey"))._fr; //TODO avalenta question about newKey
     return result;
   }  
 
@@ -170,7 +171,7 @@ public class MatrixUtils {
     }
     
     @Override
-    public void map(Chunk[] cs) {
+    public void map(Chunk[] cs, NewChunk nc) {
       for (int row = 0; row < cs[0]._len; row++) {
         double sum = 0.0;
         for (int column = 0; column < cs.length; ++column) {

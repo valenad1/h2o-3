@@ -135,6 +135,9 @@ public class FrameUtils {
     }
   }
 
+  /**
+   * Kouknout
+   */
   public static class Vec2ArryTsk extends MRTask<Vec2ArryTsk> {
     final int N;
     public double [] res;

@@ -886,13 +886,13 @@ public class VecUtils {
    * Map reduce version of uniformDistrFromFrame(frame, seed)
    */
   public static Vec uniformDistrFromFrameMR(Frame frame, long seed) {
-    UniformDistrFromFrameTask task = new UniformDistrFromFrameTask(seed).doAll(frame);
-    return task.uniformDistribution;
+    UniformDistrFromFrameTask task = new UniformDistrFromFrameTask(seed).doAll(Vec.T_NUM, frame);
+    return task.outputFrame().vec(0);
   }
 
   static class UniformDistrFromFrameTask extends MRTask<UniformDistrFromFrameTask> {
-    private Vec mins;
-    private Vec maxs;
+    private double [] mins;
+    private double [] maxs;
     private Vec uniformDistribution;
     private Random random;
     private Long seed;
@@ -903,21 +903,22 @@ public class VecUtils {
     }
 
     @Override
-    public void map(Chunk[] cs) {
-      mins = Vec.makeCon(Double.MAX_VALUE, cs.length);
-      maxs = Vec.makeCon(Double.MIN_VALUE, cs.length);
-      uniformDistribution = Vec.makeZero(cs.length);
+    public void map(Chunk[] cs, NewChunk nc) {
+      mins = new double[cs.length];
+      maxs = new double[cs.length];
+      Arrays.fill(mins, Double.MAX_VALUE);
+      Arrays.fill(maxs, Double.MIN_VALUE);
       
       for (int column = 0; column < cs.length; column++) {
-        double min = mins.at(column);
-        double max = maxs.at(column);
+        double min = mins[column];
+        double max = maxs[column];
         for (int row = 0; row < cs[column]._len; row++) {
           min = Math.min(min, cs[column].atd(row));
           max = Math.max(max, cs[column].atd(row));
         }
-        mins.set(column, min);
-        maxs.set(column, max);
-        uniformDistribution.set(column, min + random.nextDouble() * (max - min));        
+        mins[column] = min;
+        maxs[column] = max;
+        nc.addNum(min + random.nextDouble() * (max - min));        
       }
     }
 
@@ -931,13 +932,11 @@ public class VecUtils {
         @Override
         public void map(Chunk[] cs){
           Chunk cUnif = cs[0];
-          Chunk cMins = cs[1];
-          Chunk cMaxs = cs[2];
           for(int row = 0; row < cUnif._len; ++row) {
-            cUnif.set(row, cMins.atd(row) + random.nextDouble() * (cMaxs.atd(row) - cMins.atd(row)));
+            cUnif.set(row, mins[row] + random.nextDouble() * (maxs[row] - mins[row]));
           }
         }
-      }.doAll(uniformDistribution, mins, maxs)._fr.vecs()[0];
+      }.doAll(mrt.outputFrame().vecs()[0])._fr.vecs()[0];
     }    
   }
 

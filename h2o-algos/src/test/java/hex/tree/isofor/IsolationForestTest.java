@@ -2,6 +2,7 @@ package hex.tree.isofor;
 
 import hex.genmodel.algos.tree.SharedTreeNode;
 import hex.genmodel.algos.tree.SharedTreeSubgraph;
+import hex.tree.DTree;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import water.Scope;
@@ -14,13 +15,12 @@ import static org.junit.Assert.*;
 
 public class IsolationForestTest extends TestUtil {
 
-  @BeforeClass() public static void setup() {
-    stall_till_cloudsize(1);
-  }
+  @BeforeClass() public static void setup() { stall_till_cloudsize(1); }
 
   @Test
   public void testBasic() {
     try {
+      System.out.println("basic");
       Scope.enter();
       Frame train = Scope.track(parse_test_file("smalldata/anomaly/ecg_discord_train.csv"));
 
@@ -30,12 +30,15 @@ public class IsolationForestTest extends TestUtil {
       p._ntrees = 7;
       p._min_rows = 1;
       p._sample_size = 5;
-
+      
       IsolationForestModel model = new IsolationForest(p).trainModel().get();
       assertNotNull(model);
+      // avalenta - co to dela? Najde to pozici kde je model ulozeny na distribuovanym systemu?
       Scope.track_generic(model);
 
-      Frame preds = Scope.track(model.score(train));
+      // avalenta - co obsahuje preds? Cekal bych tam anomally score podle vzorce s paperu...
+      // avalenta - ale nikde nemuzu najit vypocet podle vzorce s paperu
+      Frame preds = Scope.track(model.score(train)); 
       assertArrayEquals(new String[]{"predict", "mean_length"}, preds.names());
       assertEquals(train.numRows(), preds.numRows());
 
@@ -45,6 +48,18 @@ public class IsolationForestTest extends TestUtil {
     } finally {
       Scope.exit();
     }
+  }
+  
+  @Test
+  public void testDTree() {
+    System.out.println("okurka2");
+    System.out.println("ne");
+    System.out.println("mrkev");
+//      //Frame frame = Scope.track(parse_test_file("smalldata/anomaly/ecg_discord_train.csv"));
+//      DTree dtree = new DTree(frame, frame.numCols(), frame.numCols(), 
+//              frame.numCols(),1, null);
+//      System.out.println(dtree.root());
+    System.out.println("AAaa");
   }
 
   @Test

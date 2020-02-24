@@ -5,7 +5,7 @@ import water.fvec.Chunk;
 /**
  * Helper class - encodes lengths of paths for observations separately for OOB and when they were used for tree building.
  */
-class PathTracker {
+public class PathTracker {
 
   static int encodeNewPathLength(Chunk tree, int row, int depth, boolean wasOOB) {
     final long old_len_enc = tree.at8(row);
@@ -19,6 +19,7 @@ class PathTracker {
   }
 
   private static int decodeTotalPathLength(long lengthEncoded) {
+    // avalenta - to je magie..
     long total_len = (lengthEncoded >> 31) + (lengthEncoded & 0x7fffffff);
     assert total_len == (int) total_len;
     return (int) total_len;

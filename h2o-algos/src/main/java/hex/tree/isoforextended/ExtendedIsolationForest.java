@@ -51,6 +51,24 @@ public class ExtendedIsolationForest extends SharedTree<ExtendedIsolationForestM
         return false;
     }
 
+    private static class PrintRowsMRTask extends MRTask<PrintRowsMRTask> {
+
+        @Override
+        public void map(Chunk[] cs) {
+            System.out.println(this);
+            for (int i = 0; i < cs.length; i++) {
+                for (int j = 0; j < cs[i]._len; j++) {
+                    System.out.println(cs[i].atd(j));
+                }
+            }
+        }
+
+        @Override
+        public void reduce(PrintRowsMRTask mrt) {
+            // nothing to do
+        }
+    }
+
     private class ExtendedIsolationForestDriver extends ModelBuilder<ExtendedIsolationForestModel,
             ExtendedIsolationForestParameters,
             ExtendedIsolationForestOutput>.Driver {

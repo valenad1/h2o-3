@@ -186,7 +186,7 @@ public abstract class SharedTree<M extends SharedTreeModel<M,P,O>, P extends Sha
 
   // --------------------------------------------------------------------------
   // Top-level tree-algo driver
-  abstract protected class Driver extends ModelBuilder<M,P,O>.Driver {
+  public abstract class Driver extends ModelBuilder<M,P,O>.Driver {
 
     @Override public void computeImpl() {
       _model = null;            // Resulting model!
@@ -199,7 +199,7 @@ public abstract class SharedTree<M extends SharedTreeModel<M,P,O>, P extends Sha
         if (_parms.hasCheckpoint()) {
           // Get the model to continue
           M model = DKV.get(_parms._checkpoint).<M>get().deepClone(_result);
-          // Override original parameters by new parameters
+          // Override original parameters by new parameterstree was built in
           model._parms = _parms;
           // We create a new model
           _model = model.delete_and_lock(_job);
