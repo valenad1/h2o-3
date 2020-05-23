@@ -3,7 +3,6 @@ package hex.tree.isofor;
 import hex.ConfusionMatrix;
 import hex.ModelMetricsBinomial;
 import hex.ScoreKeeper;
-import hex.genmodel.GenModel;
 import hex.genmodel.algos.tree.SharedTreeNode;
 import hex.genmodel.algos.tree.SharedTreeSubgraph;
 import hex.genmodel.tools.PredictCsv;
@@ -21,7 +20,6 @@ import water.test.util.ConfusionMatrixUtils;
 import water.util.ArrayUtils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Random;
 
 import static org.junit.Assert.*;
