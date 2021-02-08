@@ -73,7 +73,7 @@ examples = dict(
 """,
     ignore_const_cols="""
 >>> cars = h2o.import_file("https://s3.amazonaws.com/h2o-public-test-data/smalldata/junit/cars_20mpg.csv")
->>> predictors = ["displacement","power","weight","acceleration","year"]
+>>> predictors = ["displacement","power","weight","acceleration","year","const_1","const_2"]
 >>> cars["const_1"] = 6
 >>> cars["const_2"] = 7
 >>> train, valid = cars.split_frame(ratios=[.8], seed=1234)
